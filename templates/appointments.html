@@ -1,0 +1,398 @@
+{% extends 'base.html' %}
+
+{% block title %}My Appointments - HealthConnect{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="mb-3 fade-in"><i class="fas fa-calendar-alt me-2"></i>My Appointments</h2>
+            <p class="lead fade-in">
+                {% if user_type == 'doctor' %}
+                Manage your scheduled appointments with patients.
+                {% else %}
+                View and manage your upcoming doctor appointments.
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="row mb-4">
+        <div class="col-12 text-end">
+            {% if user_type == 'patient' %}
+            <a href="{{ url_for('book_appointment') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i>Book New Appointment
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Appointments Tabs and Filters -->
+    <div class="card border-0 shadow-lg fade-in">
+        <div class="card-header bg-primary text-white">
+            <ul class="nav nav-tabs card-header-tabs" id="appointmentTabs" role="tablist">
+                {% if user_type == 'doctor' %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-white" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
+                        <i class="fas fa-hourglass-half me-1"></i> Pending
+                        {% set pending_count = appointments|selectattr('status', 'equalto', 'pending')|list|length %}
+                        {% if pending_count > 0 %}
+                        <span class="badge rounded-pill bg-danger ms-1">{{ pending_count }}</span>
+                        {% endif %}
+                    </button>
+                </li>
+                {% endif %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if user_type != 'doctor' %}active{% endif %} text-white" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="{% if user_type != 'doctor' %}true{% else %}false{% endif %}">
+                        <i class="fas fa-calendar-day me-1"></i> Upcoming
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="false">
+                        <i class="fas fa-history me-1"></i> Past
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab" aria-controls="cancelled" aria-selected="false">
+                        <i class="fas fa-ban me-1"></i> Cancelled
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body p-0">
+            <div class="tab-content" id="appointmentTabsContent">
+                <!-- Pending Appointments Tab (For Doctors) -->
+                {% if user_type == 'doctor' %}
+                <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+                    {% set pending_appointments = appointments|selectattr('status', 'equalto', 'pending')|list %}
+                    {% if pending_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Patient</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in pending_appointments %}
+                                <tr id="appointment-{{ appointment.id }}" {% if request.args.get('highlight') == appointment.id|string %}class="bg-light"{% endif %}>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}</div>
+                                        <div class="text-muted">{{ appointment.time.strftime('%I:%M %p') if appointment.time }}</div>
+                                    </td>
+                                    <td>{{ appointment.patient.user.name }}</td>
+                                    <td>{{ appointment.reason or 'Not specified' }}</td>
+                                    <td><span class="badge bg-warning">Pending</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success appointment-action-btn" 
+                                                data-appointment-id="{{ appointment.id }}" 
+                                                data-status="scheduled"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#approvalModal"
+                                                data-patient-name="{{ appointment.patient.user.name }}"
+                                                data-appointment-date="{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}"
+                                                data-appointment-time="{{ appointment.time.strftime('%I:%M %p') if appointment.time }}">
+                                                <i class="fas fa-check me-1"></i> Approve
+                                            </button>
+                                            <button class="btn btn-sm btn-danger appointment-action-btn" 
+                                                data-appointment-id="{{ appointment.id }}" 
+                                                data-status="rejected"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#rejectionModal"
+                                                data-patient-name="{{ appointment.patient.user.name }}"
+                                                data-appointment-date="{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}"
+                                                data-appointment-time="{{ appointment.time.strftime('%I:%M %p') if appointment.time }}">
+                                                <i class="fas fa-times me-1"></i> Reject
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-hourglass-half fa-3x text-muted mb-3"></i>
+                        <h5>No pending appointment requests</h5>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Upcoming Appointments Tab -->
+                <div class="tab-pane fade {% if user_type != 'doctor' %}show active{% endif %}" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                    {% set upcoming_appointments = appointments|selectattr('status', 'equalto', 'scheduled')|list %}
+                    {% if upcoming_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    {% if user_type == 'doctor' %}
+                                    <th>Patient</th>
+                                    {% else %}
+                                    <th>Doctor</th>
+                                    {% endif %}
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in upcoming_appointments %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}</div>
+                                        <div class="text-muted">{{ appointment.time.strftime('%I:%M %p') if appointment.time }}</div>
+                                    </td>
+                                    {% if user_type == 'doctor' %}
+                                    <td>{{ appointment.patient.user.name }}</td>
+                                    {% else %}
+                                    <td>
+                                        <div>Dr. {{ appointment.doctor.user.name }}</div>
+                                        <div class="text-muted small">{{ appointment.doctor.specialization }}</div>
+                                    </td>
+                                    {% endif %}
+                                    <td>{{ appointment.reason or 'Not specified' }}</td>
+                                    <td><span class="badge bg-info">Scheduled</span></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if user_type == 'doctor' %}
+                                            <button class="btn btn-sm btn-outline-success appointment-status-btn" 
+                                                data-appointment-id="{{ appointment.id }}" 
+                                                data-status="completed">
+                                                <i class="fas fa-check"></i> Complete
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-sm btn-outline-danger cancel-appointment-btn" 
+                                                data-appointment-id="{{ appointment.id }}" 
+                                                data-appointment-date="{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}">
+                                                <i class="fas fa-times"></i> Cancel
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-day fa-3x text-muted mb-3"></i>
+                        <h5>No upcoming appointments</h5>
+                        {% if user_type == 'patient' %}
+                        <a href="{{ url_for('book_appointment') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-plus-circle me-2"></i> Book an Appointment
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Past Appointments Tab -->
+                <div class="tab-pane fade" id="past" role="tabpanel" aria-labelledby="past-tab">
+                    {% set past_appointments = appointments|selectattr('status', 'equalto', 'completed')|list %}
+                    {% if past_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    {% if user_type == 'doctor' %}
+                                    <th>Patient</th>
+                                    {% else %}
+                                    <th>Doctor</th>
+                                    {% endif %}
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in past_appointments %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}</div>
+                                        <div class="text-muted">{{ appointment.time.strftime('%I:%M %p') if appointment.time }}</div>
+                                    </td>
+                                    {% if user_type == 'doctor' %}
+                                    <td>{{ appointment.patient.user.name }}</td>
+                                    {% else %}
+                                    <td>
+                                        <div>Dr. {{ appointment.doctor.user.name }}</div>
+                                        <div class="text-muted small">{{ appointment.doctor.specialization }}</div>
+                                    </td>
+                                    {% endif %}
+                                    <td>{{ appointment.reason or 'Not specified' }}</td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                    <td>
+                                        {% if appointment.notes %}
+                                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#notes{{ appointment.id }}" aria-expanded="false">
+                                            <i class="fas fa-sticky-note me-1"></i> View Notes
+                                        </button>
+                                        <div class="collapse mt-2" id="notes{{ appointment.id }}">
+                                            <div class="card card-body bg-light p-2">
+                                                {{ appointment.notes }}
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">No notes</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                        <h5>No past appointments</h5>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Cancelled/Rejected Appointments Tab -->
+                <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                    {% set cancelled_appointments = appointments|selectattr('status', 'in', ['cancelled', 'rejected'])|list %}
+                    {% if cancelled_appointments %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    {% if user_type == 'doctor' %}
+                                    <th>Patient</th>
+                                    {% else %}
+                                    <th>Doctor</th>
+                                    {% endif %}
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in cancelled_appointments %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ appointment.date.strftime('%b %d, %Y') if appointment.date }}</div>
+                                        <div class="text-muted">{{ appointment.time.strftime('%I:%M %p') if appointment.time }}</div>
+                                    </td>
+                                    {% if user_type == 'doctor' %}
+                                    <td>{{ appointment.patient.user.name }}</td>
+                                    {% else %}
+                                    <td>
+                                        <div>Dr. {{ appointment.doctor.user.name }}</div>
+                                        <div class="text-muted small">{{ appointment.doctor.specialization }}</div>
+                                    </td>
+                                    {% endif %}
+                                    <td>{{ appointment.reason or 'Not specified' }}</td>
+                                    <td>
+                                        {% if appointment.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                        {% elif appointment.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if appointment.notes %}
+                                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#notes{{ appointment.id }}" aria-expanded="false">
+                                            <i class="fas fa-sticky-note me-1"></i> View Notes
+                                        </button>
+                                        <div class="collapse mt-2" id="notes{{ appointment.id }}">
+                                            <div class="card card-body bg-light p-2">
+                                                {{ appointment.notes }}
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">No notes</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-ban fa-3x text-muted mb-3"></i>
+                        <h5>No cancelled or rejected appointments</h5>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="approvalModalLabel">Approve Appointment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="appointment-approval-form">
+                    <input type="hidden" name="appointment_id" value="">
+                    <input type="hidden" name="status" value="scheduled">
+                    
+                    <p>You are about to approve the appointment with <strong class="patient-name"></strong> on <strong class="appointment-date"></strong> at <strong class="appointment-time"></strong>.</p>
+                    
+                    <div class="mb-3">
+                        <label for="approval_notes" class="form-label">Notes (optional)</label>
+                        <textarea class="form-control" id="approval_notes" name="notes" rows="3" placeholder="Add any additional information for the patient..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="appointment-approval-form" class="btn btn-success">Approve Appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectionModal" tabindex="-1" aria-labelledby="rejectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectionModalLabel">Reject Appointment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="appointment-rejection-form">
+                    <input type="hidden" name="appointment_id" value="">
+                    <input type="hidden" name="status" value="rejected">
+                    
+                    <p>You are about to reject the appointment with <strong class="patient-name"></strong> on <strong class="appointment-date"></strong> at <strong class="appointment-time"></strong>.</p>
+                    
+                    <div class="mb-3">
+                        <label for="rejection_reason" class="form-label">Reason for rejection <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejection_reason" name="notes" rows="3" placeholder="Please provide a reason for rejecting this appointment..." required></textarea>
+                        <div class="form-text">This information will be shared with the patient.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="appointment-rejection-form" class="btn btn-danger">Reject Appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/appointments.js') }}"></script>
+{% endblock %}

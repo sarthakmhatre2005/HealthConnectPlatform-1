@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}HealthConnect - Smart Healthcare Platform{% endblock %}
+
+{% block content %}
+<div class="hero-section text-center py-5 mb-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <h1 class="display-4 fw-bold text-gradient mb-3 fade-in">Welcome to HealthConnect</h1>
+                <p class="lead mb-4 fade-in">Your intelligent healthcare companion that connects you with the right doctors based on your symptoms and needs.</p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center fade-in">
+                    {% if 'user_id' not in session %}
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                        <i class="fas fa-user-plus me-2"></i>Register Now
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4 me-md-2">
+                        <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                    </a>
+                    {% if session.get('user_type') == 'patient' %}
+                    <a href="{{ url_for('symptom_checker') }}" class="btn btn-info btn-lg px-4">
+                        <i class="fas fa-stethoscope me-2"></i>Check Symptoms
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Features Section -->
+    <section class="features-section py-5">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="section-title fade-in">Smart Healthcare Features</h2>
+                <p class="section-subtitle fade-in">Experience the power of AI-driven healthcare technology</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-5">
+                <div class="card h-100 border-0 shadow-lg feature-card fade-in">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon rounded-circle bg-primary text-white mx-auto mb-4">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <h4 class="card-title">Symptom Analysis</h4>
+                        <p class="card-text">Our AI-powered system analyzes your symptoms and provides intelligent health insights.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-5">
+                <div class="card h-100 border-0 shadow-lg feature-card fade-in" data-delay="200">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon rounded-circle bg-info text-white mx-auto mb-4">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <h4 class="card-title">Doctor Matching</h4>
+                        <p class="card-text">Connect with the right healthcare specialists based on your specific needs and location.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-5">
+                <div class="card h-100 border-0 shadow-lg feature-card fade-in" data-delay="400">
+                    <div class="card-body text-center p-4">
+                        <div class="feature-icon rounded-circle bg-success text-white mx-auto mb-4">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <h4 class="card-title">Easy Appointments</h4>
+                        <p class="card-text">Book and manage your healthcare appointments with a few simple clicks.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works-section py-5 bg-dark rounded-4 p-4 mb-5">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="section-title text-white fade-in">How It Works</h2>
+                <p class="section-subtitle text-light fade-in">Three simple steps to smarter healthcare</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="step-card fade-in">
+                    <div class="step-number">1</div>
+                    <h4 class="step-title text-white">Enter Your Symptoms</h4>
+                    <p class="step-text text-light">Describe your symptoms in detail using our easy-to-use interface.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="step-card fade-in" data-delay="200">
+                    <div class="step-number">2</div>
+                    <h4 class="step-title text-white">Get AI Analysis</h4>
+                    <p class="step-text text-light">Our intelligent system analyzes your symptoms and suggests possible conditions.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 mb-4">
+                <div class="step-card fade-in" data-delay="400">
+                    <div class="step-number">3</div>
+                    <h4 class="step-title text-white">Connect with Doctors</h4>
+                    <p class="step-text text-light">Book appointments with recommended specialists near you.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section py-5">
+        <div class="row text-center mb-5">
+            <div class="col-12">
+                <h2 class="section-title fade-in">User Testimonials</h2>
+                <p class="section-subtitle fade-in">See what our users say about HealthConnect</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-lg testimonial-card fade-in">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="testimonial-avatar bg-light text-primary">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">Sarah Johnson</h5>
+                                <p class="text-muted mb-0">Patient</p>
+                            </div>
+                        </div>
+                        <p class="card-text">
+                            <i class="fas fa-quote-left text-primary me-2"></i>
+                            HealthConnect saved me so much time! I entered my symptoms, and within minutes I was connected to the perfect specialist for my condition.
+                            <i class="fas fa-quote-right text-primary ms-2"></i>
+                        </p>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-lg testimonial-card fade-in" data-delay="200">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="testimonial-avatar bg-light text-primary">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h5 class="mb-0">Dr. Michael Chen</h5>
+                                <p class="text-muted mb-0">Cardiologist</p>
+                            </div>
+                        </div>
+                        <p class="card-text">
+                            <i class="fas fa-quote-left text-primary me-2"></i>
+                            As a doctor, I appreciate that HealthConnect's AI sends me patients who truly need my specialty. It makes my practice more efficient and improves patient outcomes.
+                            <i class="fas fa-quote-right text-primary ms-2"></i>
+                        </p>
+                        <div class="text-warning">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section text-center py-5 my-5">
+        <div class="cta-card bg-primary text-white p-5 rounded-4 shadow-lg fade-in">
+            <h2 class="mb-4">Ready to experience smarter healthcare?</h2>
+            <p class="lead mb-4">Join thousands of users who have already transformed their healthcare experience with HealthConnect.</p>
+            {% if 'user_id' not in session %}
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-4 me-sm-3">
+                    <i class="fas fa-user-plus me-2"></i>Sign Up Now
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-4">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+            </div>
+            {% else %}
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-lg px-4">
+                    <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

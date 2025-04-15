@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block title %}Find Hospitals - HealthConnect{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto text-center">
+            <h2 class="mb-3 fade-in"><i class="fas fa-hospital me-2"></i>Find Healthcare Facilities</h2>
+            <p class="lead fade-in">Locate hospitals and healthcare centers near you with emergency services and specialized care.</p>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card border-0 shadow-sm fade-in">
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-5 mb-3 mb-md-0">
+                            <label for="specialty-filter" class="form-label">Filter by Specialty</label>
+                            <select class="form-select" id="specialty-filter">
+                                <option value="" selected>All Specialties</option>
+                                <option value="emergency">Emergency Services</option>
+                                <option value="cardiology">Cardiology</option>
+                                <option value="neurology">Neurology</option>
+                                <option value="oncology">Oncology</option>
+                                <option value="pediatrics">Pediatrics</option>
+                                <option value="orthopedics">Orthopedics</option>
+                                <option value="obstetrics">Obstetrics & Gynecology</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5 mb-3 mb-md-0">
+                            <label class="form-label">Find hospitals near you</label>
+                            <div id="location-alerts"></div>
+                            <button id="get-user-location" class="btn btn-primary w-100">
+                                <i class="fas fa-map-marker-alt me-2"></i> Use my location
+                            </button>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('hospital_finder') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-sync-alt me-2"></i> Reset
+                                </a>
+                                <a href="{{ url_for('doctor_finder') }}" class="btn btn-outline-info">
+                                    <i class="fas fa-user-md me-2"></i> Find Doctors
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map and Hospital Listing -->
+    <div class="row">
+        <!-- Map Section -->
+        <div class="col-lg-5 mb-4">
+            <div class="card border-0 shadow-lg h-100 fade-in">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-map-marked-alt me-2"></i>Hospital Locations</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="hospital-map" style="height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hospital Listing Section -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg fade-in">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Available Hospitals</h5>
+                    <span class="badge bg-light text-dark">{{ hospitals|length }} Found</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if hospitals %}
+                    <div class="hospital-cards-container">
+                        {% for hospital in hospitals %}
+                        <div id="hospital-{{ hospital.id }}" class="hospital-card p-3 border-bottom" data-lat="{{ hospital.latitude or '' }}" data-lng="{{ hospital.longitude or '' }}" data-specialties="{{ hospital.specialties or '' }}">
+                            <div class="row">
+                                <div class="col-md-2 mb-3 mb-md-0 text-center">
+                                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                        <i class="fas fa-hospital fa-2x text-danger"></i>
+                                    </div>
+                                </div>
+                                <div class="col-md-7 mb-3 mb-md-0">
+                                    <h5 class="mb-1">{{ hospital.name }}</h5>
+                                    <p class="mb-1 text-muted">
+                                        {% if hospital.specialties %}
+                                            {{ hospital.specialties.replace(',', ', ') }}
+                                        {% else %}
+                                            General Healthcare
+                                        {% endif %}
+                                    </p>
+                                    {% if hospital.city or hospital.state %}
+                                    <p class="mb-1">
+                                        <i class="fas fa-map-marker-alt me-1 text-secondary"></i>
+                                        {% if hospital.address %}{{ hospital.address }}{% endif %}
+                                        {% if hospital.address and (hospital.city or hospital.state) %}, {% endif %}
+                                        {% if hospital.city %}{{ hospital.city }}{% endif %}
+                                        {% if hospital.city and hospital.state %}, {% endif %}
+                                        {% if hospital.state %}{{ hospital.state }}{% endif %}
+                                    </p>
+                                    {% endif %}
+                                    <p class="hospital-distance d-none mb-1 text-success">
+                                        <i class="fas fa-route me-1"></i> <span>0.0 km away</span>
+                                    </p>
+                                </div>
+                                <div class="col-md-3 text-md-end">
+                                    {% if hospital.emergency_services %}
+                                    <div class="mb-2">
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-ambulance me-1"></i> Emergency Services
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    <div class="mb-2">
+                                        {% if hospital.phone %}
+                                        <a href="tel:{{ hospital.phone }}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-phone me-1"></i> Call
+                                        </a>
+                                        {% endif %}
+                                        {% if hospital.website %}
+                                        <a href="{{ hospital.website }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-globe me-1"></i> Website
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    <button class="btn btn-outline-secondary mt-1" type="button" data-bs-toggle="collapse" data-bs-target="#hospitalDetails{{ hospital.id }}" aria-expanded="false">
+                                        <i class="fas fa-info-circle me-md-1"></i> <span class="d-none d-md-inline">Details</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="collapse mt-3" id="hospitalDetails{{ hospital.id }}">
+                                <div class="card card-body bg-light">
+                                    {% if hospital.description %}
+                                    <h6>About {{ hospital.name }}</h6>
+                                    <p>{{ hospital.description }}</p>
+                                    {% endif %}
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-info-circle me-2"></i>Contact Information</h6>
+                                            <ul class="list-unstyled">
+                                                {% if hospital.phone %}
+                                                <li><i class="fas fa-phone me-2 text-secondary"></i>{{ hospital.phone }}</li>
+                                                {% endif %}
+                                                {% if hospital.email %}
+                                                <li><i class="fas fa-envelope me-2 text-secondary"></i>{{ hospital.email }}</li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6><i class="fas fa-stethoscope me-2"></i>Available Specialties</h6>
+                                            <p>
+                                                {% if hospital.specialties %}
+                                                    {% for specialty in hospital.specialties.split(',') %}
+                                                    <span class="badge bg-secondary me-1 mb-1">{{ specialty.strip() }}</span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="text-muted">No specialty information available</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
+                        <h5>No hospitals found</h5>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Information Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm fade-in">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-ambulance fa-2x text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Emergency Services</h5>
+                                    <p class="mb-0">For medical emergencies, call emergency services immediately at <strong>911</strong> or your local emergency number.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-first-aid fa-2x text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Emergency Symptoms</h5>
+                                    <p class="mb-0">Seek immediate medical attention for chest pain, severe bleeding, difficulty breathing, loss of consciousness, or severe trauma.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-info-circle fa-2x text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Non-Emergency Care</h5>
+                                    <p class="mb-0">For non-life-threatening conditions, consider urgent care centers for faster service than emergency rooms.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/location.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter hospitals by specialty
+        const specialtyFilter = document.getElementById('specialty-filter');
+        if (specialtyFilter) {
+            specialtyFilter.addEventListener('change', function() {
+                const selectedSpecialty = this.value;
+                const hospitalCards = document.querySelectorAll('.hospital-card');
+                
+                hospitalCards.forEach(card => {
+                    const cardSpecialties = card.dataset.specialties || '';
+                    
+                    if (!selectedSpecialty || selectedSpecialty === '' || cardSpecialties.toLowerCase().includes(selectedSpecialty.toLowerCase())) {
+                        card.style.display = '';
+                    } else if (selectedSpecialty === 'emergency' && card.innerHTML.includes('Emergency Services')) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                // Update markers on map
+                updateMapMarkers();
+            });
+        }
+    });
+</script>
+{% endblock %}
