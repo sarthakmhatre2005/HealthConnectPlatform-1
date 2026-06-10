@@ -39,7 +39,7 @@ class Patient(db.Model):
     
     # Relationships
     appointments = db.relationship('Appointment', backref='patient', lazy='dynamic', 
-                                   foreign_keys='Appointment.patient_id')
+                                foreign_keys='Appointment.patient_id')
     symptom_checks = db.relationship('SymptomCheck', backref='patient', lazy='dynamic')
     
     def __repr__(self):
